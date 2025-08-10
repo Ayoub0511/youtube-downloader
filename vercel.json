@@ -1,3 +1,8 @@
 {
-  "installCommand": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o yt-dlp && chmod +x yt-dlp && npm install"
+  "functions": {
+    "api/download.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "installCommand": "apt-get update && apt-get install -y python3-pip ffmpeg && pip3 install yt-dlp && npm install"
 }

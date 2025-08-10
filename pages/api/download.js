@@ -11,14 +11,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'URL and format are required' });
   }
 
-  // The path to the yt-dlp binary downloaded by Vercel
-  const ytdlpPath = path.join(process.cwd(), 'yt-dlp');
-
   const tmpDir = path.join('/tmp');
   const filename = `output-${Date.now()}`;
   let cmd = '';
 
   try {
+    const ytdlpPath = 'yt-dlp'; // Use the system-wide command
+
     if (format === 'mp3') {
       cmd = `${ytdlpPath} -x --audio-format mp3 --audio-quality 0 -o "${path.join(tmpDir, filename)}.mp3" "${url}"`;
     } else { // mp4
@@ -36,9 +35,9 @@ export default async function handler(req, res) {
       res.setHeader('Content-Disposition', `attachment; filename=${path.basename(filePath)}`);
       // Since res.sendFile is not available in Vercel's native Node.js environment,
       // we need to read the file and pipe it to the response.
-      // For simplicity, we'll assume the file is small and use sendFile,
+      // For simplicity, we'll assume the file is small and use res.end,
       // but in a production environment, you would stream it.
-      res.end(); // End the response for now as we can't stream.
+      res.end(); // End the response for now.
     });
 
   } catch (e) {
