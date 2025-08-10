@@ -1,9 +1,8 @@
 {
-  "build": {
-    "env": {
-      "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-      "YTDLP_PATH": "./yt-dlp"
+  "functions": {
+    "api/download.js": {
+      "runtime": "nodejs18.x"
     }
   },
-  "installCommand": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp && npm install"
+  "installCommand": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o yt-dlp && chmod +x yt-dlp && npm install"
 }
