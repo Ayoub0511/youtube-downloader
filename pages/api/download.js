@@ -1,52 +1,82 @@
 import { exec } from 'child_process';
 import path from 'path';
+import fs from 'fs';
+import { promisify } from 'util';
 
+const execPromise = promisify(exec);
+
+export const config = {
+  api: {
+    responseLimit: false,
+  },
+};
+
+// This function handles the API request for downloading the video or audio.
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).end();
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
-  const { url, format } = req.body;
+  const { url, format, quality } = req.body;
+
   if (!url || !format) {
-    return res.status(400).json({ error: 'URL and format are required' });
+    res.status(400).json({ error: 'Missing url or format' });
+    return;
   }
 
-  // Define the path to the yt-dlp executable
-  // Using path.join(process.cwd(), 'bin', 'yt-dlp.exe') to find the file in the project folder
-  const ytdlpPath = path.join(process.cwd(), 'bin', 'yt-dlp.exe');
-  
-  // For Linux/macOS, you would need to make the file executable, but for Windows it's not necessary
-  // exec(`chmod +x ${ytdlpPath}`);
+  const tempDir = path.resolve('./tmp');
+  const fileName = `output-${Date.now()}.${format}`;
+  const outputFile = path.join(tempDir, fileName);
 
-  const tmpDir = path.join('/tmp');
-  const filename = `output-${Date.now()}`;
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir);
+  }
+
   let cmd = '';
 
+  // Use the system-wide command
+  const ytdlpPath = 'yt-dlp';
+
+  if (format === 'mp4') {
+    const qualityFilter = quality ? `[height=${quality.replace('p','')}]` : '';
+    cmd = `${ytdlpPath} -f "bestvideo[ext=mp4]${qualityFilter}+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 -o "${outputFile}" "${url}"`;
+  } else if (format === 'mp3') {
+    cmd = `${ytdlpPath} -x --audio-format mp3 --audio-quality 0 -o "${outputFile}" "${url}"`;
+  } else {
+    res.status(400).json({ error: 'Unsupported format' });
+    return;
+  }
+
   try {
-    if (format === 'mp3') {
-      cmd = `${ytdlpPath} -x --audio-format mp3 --audio-quality 0 -o "${path.join(tmpDir, filename)}.mp3" "${url}"`;
-    } else { // mp4
-      cmd = `${ytdlpPath} -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 -o "${path.join(tmpDir, filename)}.mp4" "${url}"`;
+    const { stdout, stderr } = await execPromise(cmd, { maxBuffer: 1024 * 1024 * 5 });
+
+    if (!fs.existsSync(outputFile)) {
+      throw new Error(`Failed to create output file: ${outputFile}`);
     }
 
-    exec(cmd, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout, stderr) => {
-      if (error) {
-        console.error('Download error:', error);
-        return res.status(500).json({ error: `Download failed: ${error.message}` });
-      }
+    const stat = fs.statSync(outputFile);
+    res.setHeader('Content-Type', format === 'mp4' ? 'video/mp4' : 'audio/mp3');
+    res.setHeader('Content-Length', stat.size);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 
-      const filePath = `${path.join(tmpDir, filename)}.${format}`;
-      res.setHeader('Content-Type', format === 'mp3' ? 'audio/mpeg' : 'video/mp4');
-      res.setHeader('Content-Disposition', `attachment; filename=${path.basename(filePath)}`);
-      // Since res.sendFile is not available in Vercel's native Node.js environment,
-      // we need to read the file and pipe it to the response.
-      // For simplicity, we'll assume the file is small and use res.end,
-      // but in a production environment, you would stream it.
-      res.end(); // End the response for now.
+    const fileStream = fs.createReadStream(outputFile);
+    fileStream.pipe(res);
+
+    fileStream.on('close', () => {
+      fs.unlink(outputFile, (err) => {
+        if (err) console.error('Failed to delete temporary file:', err);
+      });
     });
 
-  } catch (e) {
-    console.error('Error in handler:', e);
-    return res.status(500).json({ error: 'Server error' });
+  } catch (error) {
+    console.error('Download error:', error);
+    res.status(500).json({ error: 'Failed to download the video or audio.' });
+
+    if (fs.existsSync(outputFile)) {
+      fs.unlink(outputFile, (err) => {
+        if (err) console.error('Failed to delete temporary file on error:', err);
+      });
+    }
   }
 }
