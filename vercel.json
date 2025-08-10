@@ -1,0 +1,9 @@
+{
+  "build": {
+    "env": {
+      "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+      "YTDLP_PATH": "/usr/local/bin/yt-dlp"
+    }
+  },
+  "installCommand": "pip install yt-dlp && npm install"
+}
