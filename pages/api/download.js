@@ -11,15 +11,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'URL and format are required' });
   }
 
+  // Define the path to the bundled yt-dlp binary
+  const ytdlpPath = path.join(process.cwd(), 'bin', 'yt-dlp');
+
+  // Ensure the binary is executable
+  exec(`chmod +x ${ytdlpPath}`);
+
   const tmpDir = path.join('/tmp');
   const filename = `output-${Date.now()}`;
   let cmd = '';
 
   try {
     if (format === 'mp3') {
-      cmd = `yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${path.join(tmpDir, filename)}.mp3" "${url}"`;
+      cmd = `${ytdlpPath} -x --audio-format mp3 --audio-quality 0 -o "${path.join(tmpDir, filename)}.mp3" "${url}"`;
     } else { // mp4
-      cmd = `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 -o "${path.join(tmpDir, filename)}.mp4" "${url}"`;
+      cmd = `${ytdlpPath} -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 -o "${path.join(tmpDir, filename)}.mp4" "${url}"`;
     }
 
     exec(cmd, (error, stdout, stderr) => {
