@@ -11,13 +11,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'URL and format are required' });
   }
 
+  // Define the path to the yt-dlp executable
+  // Using path.join(process.cwd(), 'bin', 'yt-dlp.exe') to find the file in the project folder
+  const ytdlpPath = path.join(process.cwd(), 'bin', 'yt-dlp.exe');
+  
+  // For Linux/macOS, you would need to make the file executable, but for Windows it's not necessary
+  // exec(`chmod +x ${ytdlpPath}`);
+
   const tmpDir = path.join('/tmp');
   const filename = `output-${Date.now()}`;
   let cmd = '';
 
   try {
-    const ytdlpPath = 'yt-dlp'; // Use the system-wide command
-
     if (format === 'mp3') {
       cmd = `${ytdlpPath} -x --audio-format mp3 --audio-quality 0 -o "${path.join(tmpDir, filename)}.mp3" "${url}"`;
     } else { // mp4
