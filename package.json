@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "pip install yt-dlp && next build",
+    "build": "next build",
     "start": "next start"
   },
   "dependencies": {
