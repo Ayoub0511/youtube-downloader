@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import path from 'path';
 
 const execPromise = promisify(exec);
 
@@ -21,7 +22,8 @@ export default async function handler(req, res) {
   // yt-dlp command to get video title and thumbnail
   // -e: get the video title
   // --get-thumbnail: get the thumbnail URL
-  const cmd = `yt-dlp --print-json "${url}"`;
+  const ytdlpPath = path.join(__dirname, 'yt-dlp');
+  const cmd = `${ytdlpPath} --print-json "${url}"`;
 
   try {
     const { stdout } = await execPromise(cmd, { maxBuffer: 1024 * 1024 });

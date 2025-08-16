@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   let cmd = '';
 
   // Use the system-wide command
-  const ytdlpPath = path.join(process.cwd(), 'yt-dlp');
+  const ytdlpPath = path.join(__dirname, 'yt-dlp');
 
   if (!fs.existsSync(ytdlpPath)) {
     console.error(`yt-dlp executable not found at: ${ytdlpPath}`);
